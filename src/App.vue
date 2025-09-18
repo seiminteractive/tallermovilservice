@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { NConfigProvider, NMessageProvider, NDialogProvider, darkTheme, type GlobalThemeOverrides, NIcon, NBackTop, NCarousel, NCard } from 'naive-ui'
+import { NConfigProvider, NMessageProvider, NDialogProvider, type GlobalThemeOverrides, NIcon, NBackTop, NCarousel, NCard } from 'naive-ui'
 import { LogoWhatsapp, MailOutline, LocationOutline, LogoInstagram, LogoFacebook } from '@vicons/ionicons5'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
