@@ -1,0 +1,40 @@
+{
+  "lastUpdated": "2025-09-16T13:54:53.929Z",
+  "totalReviews": 342,
+  "averageRating": 4.9,
+  "reviews": [
+    {
+      "id": 1,
+      "name": "Virginia diomedi",
+      "role": "Cliente",
+      "stars": 5,
+      "text": "Excelente servicio. Muy buena atención.  Excelentes personas. Me resolvieron el problema más rápido de lo que pensaba. Gracias por haberme arreglado y no duden en consultar porque son de super confianza y respetuosos con todo.",
+      "date": "2025-08-07",
+      "verified": true,
+      "source": "Google",
+      "recent": false
+    },
+    {
+      "id": 2,
+      "name": "Agustina Recalde",
+      "role": "Cliente",
+      "stars": 5,
+      "text": "Súper recomendable! Muy responsables y cumplidores con el trabajo. Cambié todas las persianas con ellos y quedaron impecables. Valoro mucho la rapidez para coordinar tanto las visitas para armar el presupuesto como para realizar la instalación. Los técnicos fueron muy amables y educados.",
+      "date": "2025-07-30",
+      "verified": true,
+      "source": "Google",
+      "recent": false
+    },
+    {
+      "id": 3,
+      "name": "Damián Ciappina",
+      "role": "Cliente",
+      "stars": 5,
+      "text": "Muy buen servicio y trabajo. Rápido y eficiente. Excelente atención. Se recomienda mucho",
+      "date": "2025-07-10",
+      "verified": true,
+      "source": "Google",
+      "recent": false
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+name: Update Google Reviews
+
+on:
+  schedule:
+    # Actualizar a las 9 AM y 9 PM todos los días (UTC-3 Argentina)
+    - cron: '0 12,0 * * *'  # 12:00 UTC y 00:00 UTC = 9 AM y 9 PM Argentina
+  workflow_dispatch: # Permite ejecutar manualmente desde GitHub
+
+jobs:
+  update-reviews:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Update reviews from Google Places API
+      env:
+        GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+        GOOGLE_PLACE_ID: ${{ secrets.GOOGLE_PLACE_ID }}
+      run: node scripts/update-reviews.js
+      
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add public/reviews.json
+        git diff --staged --quiet || git commit -m "🔄 Update Google reviews - $(date)"
+        git push

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "update-reviews": "node scripts/update-reviews.js"
   },
   "dependencies": {
     "@css-render/vue3-ssr": "^0.15.14",

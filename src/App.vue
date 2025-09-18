@@ -1,21 +1,49 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { NConfigProvider, NMessageProvider, NDialogProvider, darkTheme, type GlobalThemeOverrides, NButton, NIcon, NBackTop, NInput } from 'naive-ui'
-import { useDark, useToggle } from '@vueuse/core'
-import { LogoWhatsapp, MailOutline, CallOutline, TimeOutline, CardOutline, LocationOutline } from '@vicons/ionicons5'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { NConfigProvider, NMessageProvider, NDialogProvider, darkTheme, type GlobalThemeOverrides, NIcon, NBackTop, NCarousel, NCard, NGrid, NGridItem } from 'naive-ui'
+import { useDark } from '@vueuse/core'
+import { LogoWhatsapp, MailOutline, LocationOutline, LogoInstagram, LogoFacebook } from '@vicons/ionicons5'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
 
 // Import images
 import logoUrl from './assets/logo.webp'
-import cortinaMotorizadaUrl from './assets/cortina-motorizada.webp'
-import cortinasRoller1Url from './assets/cortinas-roller-1.jpg'
+import heroImageUrl from './assets/Lucid_Realism_A_hyperrealistic_wideangle_photograph_of_a_spaci_3.jpg'
+import cortinaRoller3Url from './assets/cortina-roller-3.jpg'
+import cortinasRoller1Url from './assets/cortinas-roller-1.png'
 import cortinasRoller2Url from './assets/cortinas-roller-2.jpg'
+import persianasMaderaUrl from './assets/persianas-de-madera.png'
+import logoSeimUrl from './assets/logo-seim-interactive.png'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const isDark = useDark({ selector: 'html', attribute: 'class', valueDark: 'dark', valueLight: '' })
-const toggleDark = useToggle(isDark)
+// const toggleDark = useToggle(isDark)
+
+const isScrolled = ref(false)
+const activeSection = ref('inicio')
+
+function handleScroll() {
+  isScrolled.value = window.scrollY > 50
+  
+  // Detectar sección activa
+  const sections = ['inicio', 'servicios', 'testimonios', 'contacto']
+  const scrollPosition = window.scrollY + 100
+  
+  for (const sectionId of sections) {
+    const element = document.getElementById(sectionId)
+    if (element) {
+      const rect = element.getBoundingClientRect()
+      const elementTop = rect.top + window.scrollY
+      const elementBottom = elementTop + rect.height
+      
+      if (scrollPosition >= elementTop && scrollPosition < elementBottom) {
+        activeSection.value = sectionId
+        break
+      }
+    }
+  }
+}
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
@@ -30,7 +58,125 @@ const themeOverrides: GlobalThemeOverrides = {
 
 const whatsappMain = '5493416405980'
 const whatsappPorteros = '5493416298496'
-const whatsappPersianas = '5493416405980'
+
+// Opiniones dinámicas cargadas desde archivo JSON
+const googleReviews = ref([])
+const reviewsData = ref({
+  lastUpdated: '',
+  totalReviews: 0,
+  averageRating: 0
+})
+
+// Variables para sliders
+const currentServiceSlide = ref(0)
+const currentTestimonialSlide = ref(0)
+
+// Variables para animaciones de números
+const animatedNumbers = ref({
+  inmobiliarias: 0,
+  confianza: 0,
+  disponibilidad: 0,
+  reviews: 0,
+  rating: 0,
+  años: 0
+})
+
+// Variables para menú hamburguesa
+const isMobileMenuOpen = ref(false)
+
+// Función para animar números
+const animateNumber = (target, duration = 2000, start = 0) => {
+  const startTime = performance.now()
+  
+  const animate = (currentTime) => {
+    const elapsed = currentTime - startTime
+    const progress = Math.min(elapsed / duration, 1)
+    
+    // Easing function (ease-out)
+    const easeOut = 1 - Math.pow(1 - progress, 3)
+    
+    const current = start + (target - start) * easeOut
+    
+    if (typeof target === 'number') {
+      return Math.floor(current)
+    } else {
+      return current.toFixed(1)
+    }
+  }
+  
+  return animate
+}
+
+// Función para animar múltiples números
+const animateNumbers = (targets) => {
+  Object.keys(targets).forEach(key => {
+    const target = targets[key]
+    const duration = 2000
+    const startTime = performance.now()
+    
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      
+      // Easing function (ease-out)
+      const easeOut = 1 - Math.pow(1 - progress, 3)
+      
+      const current = target * easeOut
+      
+      if (key === 'rating') {
+        animatedNumbers.value[key] = current.toFixed(1)
+      } else {
+        animatedNumbers.value[key] = Math.floor(current)
+      }
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      }
+    }
+    
+    requestAnimationFrame(animate)
+  })
+}
+
+// Opiniones de fallback (por si falla la carga)
+const fallbackReviews = [
+  {
+    id: 1,
+    name: 'María González',
+    role: 'Administradora de Consorcio',
+    stars: 5,
+    text: 'Excelente atención y muy prolijos. Solucionaron el problema de la persiana en tiempo récord. Los recomiendo sin dudas.',
+    date: '2025-01-15',
+    verified: true,
+    source: 'Google',
+    recent: true
+  },
+  {
+    id: 2,
+    name: 'Julián Pérez',
+    role: 'Propietario Local',
+    stars: 5,
+    text: 'Solucionaron rápido la persiana del local. Muy profesionales y con precios justos. El servicio a domicilio es excelente.',
+    date: '2025-01-12',
+    verified: true,
+    source: 'Google',
+    recent: true
+  },
+  {
+    id: 3,
+    name: 'Rocío López',
+    role: 'Particular',
+    stars: 5,
+    text: 'Buen precio y seriedad, recomendados. El servicio a domicilio es excelente y cumplieron con los tiempos acordados.',
+    date: '2025-01-10',
+    verified: true,
+    source: 'Google',
+    recent: true
+  }
+]
+
+// Enlace directo a Google My Business
+const googleMyBusinessUrl = 'https://www.google.com/search?q=Taller+Movil+Service+Rosario+reseñas'
 
 const sections = [
   { id: 'inicio', label: 'Inicio' },
@@ -39,12 +185,106 @@ const sections = [
   { id: 'contacto', label: 'Contacto' }
 ]
 
-const name = ref('')
-const message = ref('')
+// const name = ref('')
+// const message = ref('')
 
 function openWhatsApp(number: string, text: string) {
   const url = `https://wa.me/${number}?text=${encodeURIComponent(text)}`
   window.open(url, '_blank')
+}
+
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+const closeMobileMenu = () => {
+  isMobileMenuOpen.value = false
+}
+
+function formatDate(dateString: string) {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-AR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+// Función para cargar opiniones desde archivo JSON
+async function loadReviews() {
+  try {
+    const response = await fetch('/reviews.json')
+    const data = await response.json()
+    
+    googleReviews.value = data.reviews || []
+    reviewsData.value = {
+      lastUpdated: data.lastUpdated,
+      totalReviews: data.totalReviews,
+      averageRating: data.averageRating
+    }
+    
+    console.log('✅ Opiniones cargadas desde archivo JSON')
+    console.log(`📊 Total: ${data.totalReviews}, Promedio: ${data.averageRating}`)
+  } catch (error) {
+    console.error('❌ Error al cargar opiniones:', error)
+    // Usar opiniones de fallback
+    googleReviews.value = fallbackReviews
+    reviewsData.value = {
+      lastUpdated: new Date().toISOString(),
+      totalReviews: fallbackReviews.length,
+      averageRating: 5.0
+    }
+    console.log('🔄 Usando opiniones de fallback')
+  }
+}
+
+// Función para formatear la fecha de última actualización
+function formatLastUpdated(dateString: string) {
+  if (!dateString) return 'Hoy'
+  
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+  
+  if (diffHours < 24) {
+    return 'Hoy'
+  } else if (diffHours < 48) {
+    return 'Ayer'
+  } else {
+    return date.toLocaleDateString('es-AR', {
+      day: 'numeric',
+      month: 'short'
+    })
+  }
+}
+
+// Computed para las opiniones a mostrar (ya vienen filtradas del backend)
+const displayedReviews = computed(() => {
+  // Las opiniones ya vienen filtradas por 4+ estrellas y limitadas a 3 desde el script
+  return googleReviews.value.slice(0, 3)
+})
+
+// Función para simular la obtención de opiniones reales de Google
+// En producción, esto se reemplazaría por una llamada a la API de Google Places
+async function fetchRealGoogleReviews() {
+  // Simular delay de API
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  
+  // En producción, aquí harías la llamada real a:
+  // https://maps.googleapis.com/maps/api/place/details/json?place_id=PLACE_ID&fields=name,rating,reviews&key=TU_API_KEY
+  
+  console.log('🔄 Obteniendo opiniones reales de Google My Business...')
+  
+  // Retornar las opiniones actuales (en producción vendrían de la API)
+  return displayedReviews.value
+}
+
+// Función para actualizar opiniones (se puede llamar periódicamente)
+function updateReviews() {
+  console.log('📊 Actualizando opiniones de Google...')
+  fetchRealGoogleReviews().then(reviews => {
+    console.log('✅ Opiniones actualizadas:', reviews.length)
+  })
 }
 
 const years = ref(0)
@@ -74,6 +314,52 @@ onMounted(() => {
     onUpdate: () => { years.value = Number((years.value as unknown as number)) }
   })
 
+  // Animar números de colaboraciones
+  ScrollTrigger.create({
+    trigger: '.collaboration-stats',
+    start: 'top 80%',
+    onEnter: () => {
+      animateNumbers({
+        inmobiliarias: 30,
+        confianza: 100
+      })
+    }
+  })
+  
+        // Animar números de testimonios
+        ScrollTrigger.create({
+          trigger: '.testimonials-stats',
+          start: 'top 80%',
+          onEnter: () => {
+            animateNumbers({
+              reviews: 342,
+              rating: 4.8,
+              años: 20
+            })
+          }
+        })
+        
+        // Animar servicios desde los costados
+        ScrollTrigger.batch('.service-animate-left', {
+          onEnter: (elements) => {
+            elements.forEach((element) => {
+              element.classList.add('animate-in')
+            })
+          },
+          start: 'top 85%',
+          end: 'bottom 15%'
+        })
+        
+        ScrollTrigger.batch('.service-animate-right', {
+          onEnter: (elements) => {
+            elements.forEach((element) => {
+              element.classList.add('animate-in')
+            })
+          },
+          start: 'top 85%',
+          end: 'bottom 15%'
+        })
+
   // Parallax effect for hero image
   gsap.to('.hero-image', {
     yPercent: -20,
@@ -85,6 +371,16 @@ onMounted(() => {
       scrub: true
     }
   })
+
+  window.addEventListener('scroll', handleScroll)
+  handleScroll()
+  
+  // Cargar opiniones desde archivo JSON
+  loadReviews()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -93,11 +389,11 @@ onMounted(() => {
     <NDialogProvider>
       <NMessageProvider>
         <!-- Navigation -->
-        <nav class="nav">
+        <nav class="nav" :class="{ 'nav--scrolled': isScrolled }">
           <div class="container-wide">
             <div class="nav-content">
               <div class="nav-brand">
-                <div class="nav-logo-container">
+                <div class="nav-logo-container logo-pill">
                   <img :src="logoUrl" alt="Taller Móvil Service" class="nav-logo" />
                 </div>
                 <div class="nav-brand-text">
@@ -106,214 +402,563 @@ onMounted(() => {
                 </div>
               </div>
               
-              <div class="nav-menu">
-                <a v-for="section in sections" :key="section.id" :href="'#' + section.id" class="nav-link">
-                  {{ section.label }}
-                </a>
-              </div>
+                     <div class="nav-menu">
+                       <a v-for="section in sections" :key="section.id" :href="'#' + section.id" 
+                          :class="['nav-link', { 'nav-link--active': activeSection === section.id }]">
+                         {{ section.label }}
+                       </a>
+                     </div>
               
               <div class="nav-actions">
-                <div class="nav-contact">
-                  <a :href="'https://wa.me/' + whatsappMain" target="_blank" class="nav-whatsapp">
-                    <NIcon><LogoWhatsapp /></NIcon>
-                    <span>WhatsApp</span>
-                  </a>
-                  <a href="mailto:consultas@tallermovilservice.com" class="nav-email">
-                    <NIcon><MailOutline /></NIcon>
-                    <span>Email</span>
-                  </a>
-                </div>
+                <!-- Botón de contacto para desktop -->
+                <a href="#contacto" class="nav-contact-btn nav-contact-btn-desktop">
+                  <NIcon><LogoWhatsapp /></NIcon>
+                  <span>Contacto</span>
+                </a>
+                
+                <!-- Menú hamburguesa para mobile -->
+                <button @click="toggleMobileMenu" class="nav-hamburger-btn">
+                  <div class="hamburger-icon" :class="{ 'active': isMobileMenuOpen }">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
         </nav>
 
-        <main>
-          <!-- Hero Section -->
-          <section id="inicio" class="hero-section">
-            <div class="container-wide">
-              <div class="hero-layout">
-                <div class="hero-content animate-on-scroll">
-                  <div class="hero-badge">
-                    <span>✨ Más de 20 años de experiencia</span>
-                  </div>
-                  
-                  <h1 class="text-display mb-6">
-                    SOMOS LÍDERES EN LA <span class="text-gradient">REPARACIÓN</span> DE PERSIANAS, CORTINAS ROLLER Y MOTORIZACIÓN
-                  </h1>
-                  
-                  <p class="text-body-lg text-secondary mb-6">
-                    Somos Taller Móvil, una empresa con más de 20 años de trayectoria y especialistas en el mantenimiento de porteros eléctricos, cortinas de enrollar, además contamos con personal capacitado.
-                  </p>
-                  
-                  <p class="text-body text-secondary mb-8">
-                    Nos dirigimos a administradores de edificios, empresas y casas particulares, a quienes brindamos una atención seria, responsable y de confianza. Trabajamos en la ciudad de Rosario y sus alrededores, donde los clientes nos prefieren por nuestra experiencia.
-                  </p>
-                  
-                  <div class="hero-highlights mb-8">
-                    <div class="highlight-item">
-                      <span class="highlight-icon">🏆</span>
-                      <span>OFRECEMOS LA MEJOR CALIDAD</span>
-                    </div>
-                    <div class="highlight-item">
-                      <span class="highlight-icon">⚡</span>
-                      <span>EFICIENCIA Y SERVICIO PERSONALIZADO</span>
-                    </div>
-                  </div>
-                  
-                  <div class="hero-actions mb-8">
-                    <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero hacer una consulta sobre sus servicios. Vengo desde la web.')" class="btn btn-primary btn-xl">
-                      <NIcon><LogoWhatsapp /></NIcon>
-                      ¡Esperamos su llamada!
-                    </button>
-                    <a href="mailto:consultas@tallermovilservice.com" class="btn btn-secondary btn-xl">
-                      <NIcon><MailOutline /></NIcon>
-                      consultas@tallermovilservice.com
-                    </a>
-                  </div>
-                  
-                  <div class="hero-stats">
-                    <div class="stat-item">
-                      <div class="stat-number">{{ Math.round(years) }}+</div>
-                      <div class="stat-label">Años de experiencia</div>
-                    </div>
-                    <div class="stat-item">
-                      <div class="stat-number">30+</div>
-                      <div class="stat-label">Inmobiliarias colaboran</div>
-                    </div>
-                    <div class="stat-item">
-                      <div class="stat-number">100%</div>
-                      <div class="stat-label">Garantía de trabajo</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="hero-image-container animate-on-scroll">
-                  <div class="hero-image-showcase">
-                    <div class="showcase-main">
-                      <div class="showcase-card">
-                        <h3>Colaboramos con más de 30 Inmobiliarias en Rosario</h3>
-                        <p>Para ofrecer soluciones de reparación de persianas confiables y eficientes</p>
-                      </div>
-                    </div>
-                    <div class="showcase-features">
-                      <div class="feature-card">
-                        <span class="feature-icon">🏠</span>
-                        <span>Servicio a Domicilio</span>
-                      </div>
-                      <div class="feature-card">
-                        <span class="feature-icon">🔧</span>
-                        <span>Diagnóstico Gratuito</span>
-                      </div>
-                      <div class="feature-card">
-                        <span class="feature-icon">🛡️</span>
-                        <span>Garantía de Trabajo</span>
-                      </div>
-                      <div class="feature-card">
-                        <span class="feature-icon">⚡</span>
-                        <span>Atención Rápida</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <!-- Menú móvil - Solo visible en mobile -->
+        <div class="mobile-menu" :class="{ 'mobile-menu--open': isMobileMenuOpen }">
+          <div class="mobile-menu-overlay" @click="closeMobileMenu"></div>
+          <div class="mobile-menu-content">
+            <div class="mobile-menu-header">
+              <h3>Menú</h3>
+              <button @click="closeMobileMenu" class="mobile-menu-close">×</button>
             </div>
-          </section>
+            <nav class="mobile-menu-nav">
+              <a v-for="section in sections" :key="section.id" :href="'#' + section.id" 
+                 @click="closeMobileMenu"
+                 class="mobile-menu-link">
+                {{ section.label }}
+              </a>
+              <a :href="'https://wa.me/' + whatsappMain" target="_blank" @click="closeMobileMenu" class="mobile-menu-whatsapp">
+                <NIcon><LogoWhatsapp /></NIcon>
+                <span>Contacto WhatsApp</span>
+              </a>
+            </nav>
+          </div>
+        </div>
 
-          <!-- Full Screen Hero Service -->
-          <section class="fullscreen-section animate-on-scroll">
+        <main>
+          <!-- Hero Fullscreen -->
+          <section id="inicio" class="fullscreen-section hero-fullscreen">
             <div class="fullscreen-image">
-              <img :src="cortinaMotorizadaUrl" alt="Cortina motorizada profesional" />
+              <img :src="heroImageUrl" alt="Servicios profesionales de persianas y cortinas" />
             </div>
             <div class="fullscreen-overlay"></div>
             <div class="fullscreen-content">
-              <h2 class="text-heading-1 mb-6">Especialistas en Motorización</h2>
-              <p class="text-body-lg mb-8 opacity-90">
-                Automatizamos tus persianas y cortinas roller con la última tecnología. Motores silenciosos, control remoto y instalación profesional garantizada.
-              </p>
-              <button @click="openWhatsApp(whatsappPersianas, 'Consulta por motorización de persianas')" class="btn btn-primary btn-xl">
-                <NIcon><LogoWhatsapp /></NIcon>
-                Consultar Motorización
-              </button>
+              <h1 class="text-display mb-6">Líderes en <span class="text-gradient">Reparación</span> y <span class="text-gradient">Motorización</span></h1>
+              <p class="text-body-lg mb-8 opacity-90">Servicio profesional para persianas y cortinas roller en Rosario y alrededores.</p>
+              <div class="hero-actions text-center">
+                <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero hacer una consulta sobre sus servicios. Vengo desde la web.')" class="btn btn-primary btn-xl">
+                  <NIcon><LogoWhatsapp /></NIcon>
+                  Pedir asesoramiento
+                </button>
+              </div>
             </div>
           </section>
 
-          <!-- Half Screen Section - Cortinas Roller -->
-          <section class="alternating-section">
-            <div class="halfscreen-section">
-              <div class="halfscreen-image">
-                <img :src="cortinasRoller1Url" alt="Reparación de cortinas roller" />
+          <!-- Intro Text Section (solo texto debajo del hero) -->
+          <section id="servicios" class="section">
+            <div class="container">
+              <div class="text-center animate-on-scroll">
+                <h2 class="text-heading-1 mb-4">Soluciones <span class="text-gradient">integrales</span> para <span class="text-gradient">persianas</span> y <span class="text-gradient">roller</span></h2>
+                <p class="text-body-lg text-secondary mb-6">Instalación, reparación y motorización con atención rápida, garantía y trato profesional.</p>
               </div>
+            </div>
+          </section>
+
+          <!-- Slider elegante de servicios para mobile -->
+          <div class="services-mobile-container">
+            <NCarousel 
+              :current-slide="currentServiceSlide"
+              @update:current-slide="currentServiceSlide = $event"
+              :show-dots="true"
+              :dot-type="'line'"
+              :dot-placement="'bottom'"
+              :autoplay="true"
+              :autoplay-speed="2500"
+              :slides-per-view="1"
+              :space-between="0"
+              :centered-slides="false"
+              :loop="true"
+              :effect="'slide'"
+              :speed="500"
+              class="services-carousel"
+            >
+              <!-- Slide 1: Cortinas Roller -->
+              <div class="service-carousel-slide">
+                <div class="service-slide-image">
+                  <img :src="cortinasRoller1Url" alt="Servicio de reparación de cortinas roller" />
+                </div>
+                <div class="service-slide-content">
+                    <div class="service-content-redesign">
+                      <div class="service-header">
+                        <h3 class="service-title">Reparación de Cortinas Roller</h3>
+                        <div class="service-subtitle">Especialistas en soluciones integrales</div>
+                      </div>
+                    <div class="service-description">
+                      <p class="description-text">Ajuste de mecanismos, cambio de telas y mantenimiento profesional para extender la vida útil de tus cortinas roller. Soluciones técnicas con garantía completa y atención personalizada.</p>
+                    </div>
+                    <div class="service-cta">
+                      <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero reparar mis cortinas roller.')" class="btn btn-primary btn-lg btn-service">
+                        <span class="btn-text">Solicitar Reparación</span>
+                        <span class="btn-icon">→</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Slide 2: Persianas -->
+              <div class="service-carousel-slide">
+                <div class="service-slide-image">
+                  <img :src="cortinasRoller2Url" alt="Servicio de reparación de persianas" />
+                </div>
+                <div class="service-slide-content">
+                    <div class="service-content-redesign">
+                      <div class="service-header">
+                        <h3 class="service-title">Reparación de Persianas</h3>
+                        <div class="service-subtitle">Soluciones técnicas especializadas</div>
+                      </div>
+                    <div class="service-description">
+                      <p class="description-text">Reparación especializada de persianas de aluminio, madera y PVC. Ajuste de cintas, cambio de lamas y mantenimiento completo para mantener la funcionalidad óptima.</p>
+                    </div>
+                    <div class="service-cta">
+                      <button @click="openWhatsApp(whatsappMain, 'Hola! Necesito reparar mis persianas.')" class="btn btn-primary btn-lg btn-service">
+                        <span class="btn-text">Solicitar Reparación</span>
+                        <span class="btn-icon">→</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Slide 3: Persianas de Madera -->
+              <div class="service-carousel-slide">
+                <div class="service-slide-image">
+                  <img :src="persianasMaderaUrl" alt="Servicio de reparación de persianas de madera" />
+                </div>
+                <div class="service-slide-content">
+                    <div class="service-content-redesign">
+                      <div class="service-header">
+                        <h3 class="service-title">Reparación de Persianas de Madera</h3>
+                        <div class="service-subtitle">Arte y técnica tradicional</div>
+                      </div>
+                    <div class="service-description">
+                      <p class="description-text">Restauración y reparación de persianas de madera con técnicas tradicionales. Pulido, barnizado y ajuste de mecanismos para conservar la belleza y funcionalidad de tus persianas.</p>
+                    </div>
+                    <div class="service-cta">
+                      <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero reparar mis persianas de madera.')" class="btn btn-primary btn-lg btn-service">
+                        <span class="btn-text">Solicitar Reparación</span>
+                        <span class="btn-icon">→</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Slide 4: Motorización -->
+              <div class="service-carousel-slide">
+                <div class="service-slide-image">
+                  <img :src="cortinaRoller3Url" alt="Servicio de motorización de persianas y cortinas roller" />
+                </div>
+                <div class="service-slide-content">
+                    <div class="service-content-redesign">
+                      <div class="service-header">
+                        <h3 class="service-title">Motorización de Persianas y Cortinas Roller</h3>
+                        <div class="service-subtitle">Automatización inteligente</div>
+                      </div>
+                    <div class="service-description">
+                      <p class="description-text">Instalación de motores para automatizar persianas y cortinas roller. Control remoto, programación horaria y integración con sistemas inteligentes para mayor comodidad.</p>
+                    </div>
+                    <div class="service-cta">
+                      <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero motorizar mis persianas/cortinas.')" class="btn btn-primary btn-lg btn-service">
+                        <span class="btn-text">Solicitar Motorización</span>
+                        <span class="btn-icon">→</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </NCarousel>
+          </div>
+
+          <!-- Sección alternada 1: Texto izquierda / Imagen derecha -->
+          <section class="alternating-section">
+            <div class="halfscreen-section service-animate-left">
               <div class="halfscreen-content halfscreen-content-left">
-                <h3 class="text-heading-2 mb-6">Reparación de Cortinas Roller</h3>
-                <p class="text-body-lg text-secondary mb-6">
-                  Servicio especializado en cortinas enrollables, reparación de mecanismos, cambio de telas y mantenimiento preventivo.
-                </p>
-                <div class="service-features-large mb-8">
-                  <div class="feature-item">
-                    <span class="feature-icon">🔧</span>
-                    <span>Diagnóstico gratuito</span>
+                <div class="service-content-redesign">
+                  <!-- Header Section -->
+                  <div class="service-header">
+                    <div class="service-category">
+                      <span class="category-icon">🏠</span>
+                      <span class="category-text">Servicio a Domicilio</span>
+                    </div>
+                    <h3 class="service-title">Reparación de Cortinas Roller</h3>
+                    <div class="service-subtitle">Especialistas en soluciones integrales</div>
                   </div>
-                  <div class="feature-item">
-                    <span class="feature-icon">⚙️</span>
-                    <span>Reparación de mecanismos</span>
+
+                  <!-- Description Section -->
+                  <div class="service-description">
+                    <p class="description-text">Ajuste de mecanismos, cambio de telas y mantenimiento profesional para extender la vida útil de tus cortinas roller. Soluciones técnicas con garantía completa y atención personalizada.</p>
                   </div>
-                  <div class="feature-item">
-                    <span class="feature-icon">🎨</span>
-                    <span>Cambio de telas</span>
+
+                  <!-- Features Grid -->
+                  <div class="service-features-grid">
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🔧</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Motor y Cadena</h4>
+                        <p class="feature-desc">Reparación completa</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🧼</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Limpieza</h4>
+                        <p class="feature-desc">Y calibración</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🎨</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Cambio de Telas</h4>
+                        <p class="feature-desc">Amplia variedad</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">⚡</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Mantenimiento</h4>
+                        <p class="feature-desc">Preventivo</p>
+                      </div>
+                    </div>
                   </div>
-                  <div class="feature-item">
-                    <span class="feature-icon">🛠️</span>
-                    <span>Mantenimiento preventivo</span>
+
+                  <!-- Benefits Section -->
+                  <div class="service-benefits-section">
+                    <div class="benefit-highlight">
+                      <div class="benefit-item">
+                        <div class="benefit-icon">🛡️</div>
+                        <span>Garantía de 6 meses</span>
+                      </div>
+                      <div class="benefit-item">
+                        <div class="benefit-icon">⭐</div>
+                        <span>Materiales originales</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CTA Section -->
+                  <div class="service-cta">
+                    <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero reparar mis cortinas roller.')" class="btn btn-primary btn-lg btn-service">
+                      <span class="btn-text">Solicitar Reparación</span>
+                      <span class="btn-icon">→</span>
+                    </button>
                   </div>
                 </div>
-                <button @click="openWhatsApp(whatsappPersianas, 'Consulta por reparación de cortinas roller')" class="btn btn-primary btn-lg">
-                  Consultar Servicio
-                </button>
+              </div>
+              <div class="halfscreen-image">
+                <img :src="cortinasRoller1Url" alt="Servicio de reparación de cortinas roller" />
               </div>
             </div>
           </section>
 
-          <!-- Half Screen Section - Persianas (Reversed) -->
+          <!-- Sección alternada 2: Imagen izquierda / Texto derecha (usar mismo orden y dejar que el CSS invierta) -->
           <section class="alternating-section">
-            <div class="halfscreen-section">
-              <div class="halfscreen-image">
-                <img :src="cortinasRoller2Url" alt="Reparación de persianas" />
-              </div>
+            <div class="halfscreen-section service-animate-right">
               <div class="halfscreen-content halfscreen-content-right">
-                <h3 class="text-heading-2 mb-6">Reparación de Persianas</h3>
-                <p class="text-body-lg text-secondary mb-6">
-                  Mantenimiento y reparación completa de persianas de aluminio, PVC y madera. Atención especializada para hogares y empresas.
-                </p>
-                <div class="service-features-large mb-8">
-                  <div class="feature-item">
-                    <span class="feature-icon">🏠</span>
-                    <span>Atención a domicilio</span>
+                <div class="service-content-redesign">
+                  <!-- Header Section -->
+                  <div class="service-header">
+                    <div class="service-category service-category-left">
+                      <span class="category-icon">⚡</span>
+                      <span class="category-text">Atención Rápida</span>
+                    </div>
+                    <h3 class="service-title">Reparación de Persianas</h3>
+                    <div class="service-subtitle">Soluciones técnicas especializadas</div>
                   </div>
-                  <div class="feature-item">
-                    <span class="feature-icon">🔧</span>
-                    <span>Reparación completa</span>
+
+                  <!-- Description Section -->
+                  <div class="service-description">
+                    <p class="description-text">Cambio de flejes, cintas y ejes con atención especializada. Soluciones rápidas para persianas trabadas o que hacen ruido. Diagnóstico gratuito y presupuesto sin compromiso.</p>
                   </div>
-                  <div class="feature-item">
-                    <span class="feature-icon">🛡️</span>
-                    <span>Garantía de trabajo</span>
+
+                  <!-- Features Grid -->
+                  <div class="service-features-grid">
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">⚙️</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Componentes</h4>
+                        <p class="feature-desc">Reemplazo completo</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">⏱️</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Atención</h4>
+                        <p class="feature-desc">En el día</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🔧</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Flejes y Cintas</h4>
+                        <p class="feature-desc">Especializados</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🏠</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">A Domicilio</h4>
+                        <p class="feature-desc">Servicio completo</p>
+                      </div>
+                    </div>
                   </div>
-                  <div class="feature-item">
-                    <span class="feature-icon">⚡</span>
-                    <span>Servicio rápido</span>
+
+                  <!-- Benefits Section -->
+                  <div class="service-benefits-section">
+                    <div class="benefit-highlight">
+                      <div class="benefit-item">
+                        <div class="benefit-icon">🔍</div>
+                        <span>Diagnóstico gratuito</span>
+                      </div>
+                      <div class="benefit-item">
+                        <div class="benefit-icon">📋</div>
+                        <span>Presupuesto sin compromiso</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CTA Section -->
+                  <div class="service-cta">
+                    <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero reparar mis persianas.')" class="btn btn-primary btn-lg btn-service">
+                      <span class="btn-text">Pedir Turno</span>
+                      <span class="btn-icon">→</span>
+                    </button>
                   </div>
                 </div>
-                <button @click="openWhatsApp(whatsappPersianas, 'Consulta por reparación de persianas')" class="btn btn-primary btn-lg">
-                  Consultar Servicio
-                </button>
+              </div>
+              <div class="halfscreen-image">
+                <img :src="cortinasRoller2Url" alt="Servicio de reparación de persianas" />
               </div>
             </div>
           </section>
+
+          <!-- Sección alternada 3: Texto izquierda / Imagen derecha - Persianas de Madera -->
+          <section class="alternating-section">
+            <div class="halfscreen-section service-animate-left">
+              <div class="halfscreen-content halfscreen-content-left">
+                <div class="service-content-redesign">
+                  <!-- Header Section -->
+                  <div class="service-header">
+                    <div class="service-category">
+                      <span class="category-icon">🌳</span>
+                      <span class="category-text">Especialistas en Madera</span>
+                    </div>
+                    <h3 class="service-title">Reparación de Persianas de Madera</h3>
+                    <div class="service-subtitle">Arte y técnica tradicional</div>
+                  </div>
+
+                  <!-- Description Section -->
+                  <div class="service-description">
+                    <p class="description-text">Especialistas en restauración y reparación de persianas de madera. Mantenemos la elegancia y funcionalidad de tus persianas clásicas combinando técnicas tradicionales con tecnología moderna.</p>
+                  </div>
+
+                  <!-- Features Grid -->
+                  <div class="service-features-grid">
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🌳</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Restauración</h4>
+                        <p class="feature-desc">De madera</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🎨</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Lijado</h4>
+                        <p class="feature-desc">Y barnizado</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🔨</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Reparación</h4>
+                        <p class="feature-desc">De lamas</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">💎</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Mantenimiento</h4>
+                        <p class="feature-desc">Especializado</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Benefits Section -->
+                  <div class="service-benefits-section">
+                    <div class="benefit-highlight">
+                      <div class="benefit-item">
+                        <div class="benefit-icon">🏛️</div>
+                        <span>Técnicas tradicionales</span>
+                      </div>
+                      <div class="benefit-item">
+                        <div class="benefit-icon">✨</div>
+                        <span>Materiales de calidad</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CTA Section -->
+                  <div class="service-cta">
+                    <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero reparar mis persianas de madera.')" class="btn btn-primary btn-lg btn-service">
+                      <span class="btn-text">Consultar Servicio</span>
+                      <span class="btn-icon">→</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="halfscreen-image">
+                <img :src="persianasMaderaUrl" alt="Servicio de reparación de persianas de madera" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Sección alternada 4: Imagen izquierda / Texto derecha - Motorización -->
+          <section class="alternating-section">
+            <div class="halfscreen-section service-animate-right">
+              <div class="halfscreen-content halfscreen-content-right">
+                <div class="service-content-redesign">
+                  <!-- Header Section -->
+                  <div class="service-header">
+                    <div class="service-category service-category-left">
+                      <span class="category-icon">🤖</span>
+                      <span class="category-text">Tecnología Avanzada</span>
+                    </div>
+                    <h3 class="service-title">Motorización de Persianas y Cortinas Roller</h3>
+                    <div class="service-subtitle">Automatización inteligente</div>
+                  </div>
+
+                  <!-- Description Section -->
+                  <div class="service-description">
+                    <p class="description-text">Transforma tus persianas y cortinas en sistemas automáticos de última generación. Control remoto, programación horaria y máxima comodidad en tu hogar u oficina con tecnología inteligente.</p>
+                  </div>
+
+                  <!-- Features Grid -->
+                  <div class="service-features-grid">
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">📱</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Control Remoto</h4>
+                        <p class="feature-desc">Incluido</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">⏰</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Programación</h4>
+                        <p class="feature-desc">Automática</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🔋</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Motores</h4>
+                        <p class="feature-desc">Silenciosos</p>
+                      </div>
+                    </div>
+                    <div class="feature-card">
+                      <div class="feature-icon-wrapper">
+                        <span class="feature-icon">🏠</span>
+                      </div>
+                      <div class="feature-content">
+                        <h4 class="feature-title">Instalación</h4>
+                        <p class="feature-desc">Profesional</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Benefits Section -->
+                  <div class="service-benefits-section">
+                    <div class="benefit-highlight">
+                      <div class="benefit-item">
+                        <div class="benefit-icon">🔧</div>
+                        <span>Instalación incluida</span>
+                      </div>
+                      <div class="benefit-item">
+                        <div class="benefit-icon">🛡️</div>
+                        <span>Garantía extendida</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CTA Section -->
+                  <div class="service-cta">
+                    <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero motorizar mis persianas/cortinas.')" class="btn btn-primary btn-lg btn-service">
+                      <span class="btn-text">Consultar Motorización</span>
+                      <span class="btn-icon">→</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="halfscreen-image">
+                <img :src="cortinaRoller3Url" alt="Servicio de motorización de persianas y cortinas roller" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Separador para mobile -->
+          <div class="mobile-separator"></div>
 
           <!-- Full Screen Section - Colaboraciones -->
           <section class="fullscreen-section animate-on-scroll">
             <div class="fullscreen-image">
-              <img :src="cortinaMotorizadaUrl" alt="Colaboraciones inmobiliarias" />
+              <img :src="cortinaRoller3Url" alt="Colaboraciones inmobiliarias" />
             </div>
             <div class="fullscreen-overlay"></div>
             <div class="fullscreen-content">
@@ -323,11 +968,11 @@ onMounted(() => {
               </p>
               <div class="collaboration-stats">
                 <div class="stat-item">
-                  <div class="stat-number">30+</div>
+                  <div class="stat-number">{{ animatedNumbers.inmobiliarias }}+</div>
                   <div class="stat-label">Inmobiliarias</div>
                 </div>
                 <div class="stat-item">
-                  <div class="stat-number">100%</div>
+                  <div class="stat-number">{{ animatedNumbers.confianza }}%</div>
                   <div class="stat-label">Confianza</div>
                 </div>
                 <div class="stat-item">
@@ -339,250 +984,248 @@ onMounted(() => {
           </section>
 
           <!-- Testimonials Section -->
-          <section id="testimonios" class="section">
+          <section id="testimonios" class="section testimonials-section-elaborate">
             <div class="container">
-              <div class="text-center mb-8 animate-on-scroll">
-                <h2 class="text-heading-1 mb-4">Lo que dicen nuestros clientes</h2>
-                <p class="text-body-lg text-secondary">
-                  Más de 20 años brindando soluciones confiables a administradores de edificios, empresas y casas particulares.
-                </p>
+              <div class="text-center mb-12 animate-on-scroll">
+                <div class="testimonials-header">
+                  <h2 class="text-heading-1 mb-4">Lo que dicen nuestros clientes</h2>
+                  <p class="text-body-lg text-secondary max-w-3xl mx-auto">
+                    Más de 20 años brindando soluciones confiables a administradores de edificios, empresas y casas particulares. 
+                    Cada opinión representa nuestra dedicación al servicio de calidad.
+                  </p>
+                  <div class="testimonials-stats">
+                    <div class="stat-item">
+                      <div class="stat-number">{{ animatedNumbers.reviews }}+</div>
+                      <div class="stat-label">Reseñas</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-number">{{ animatedNumbers.rating }}</div>
+                      <div class="stat-label">Calificación</div>
+                    </div>
+                    <div class="stat-item">
+                      <div class="stat-number">{{ animatedNumbers.años }}+</div>
+                      <div class="stat-label">Años</div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
+              <!-- Grid normal para desktop -->
               <div class="grid-3">
-                <div v-for="testimonial in [
-                  { name: 'María González', role: 'Administradora de Consorcio', stars: 5, text: 'Excelente atención y muy prolijos. Solucionaron el problema de la persiana en tiempo récord. Los recomiendo sin dudas.' },
-                  { name: 'Julián Pérez', role: 'Propietario Local', stars: 5, text: 'Solucionaron rápido la persiana del local. Muy profesionales y con precios justos. El servicio a domicilio es excelente.' },
-                  { name: 'Rocío López', role: 'Particular', stars: 5, text: 'Buen precio y seriedad, recomendados. El servicio a domicilio es excelente y cumplieron con los tiempos acordados.' }
-                ].filter(t => t.stars >= 4)" :key="testimonial.name" class="testimonial-card animate-on-scroll">
-                  <div class="testimonial-rating">
-                    <span v-for="i in testimonial.stars" :key="i" class="star">★</span>
+                <div v-for="testimonial in displayedReviews" :key="testimonial.id" class="testimonial-card animate-on-scroll">
+                  <div class="testimonial-header">
+                    <div class="testimonial-rating">
+                      <span v-for="i in testimonial.stars" :key="i" class="star">★</span>
+                    </div>
+                    <div class="testimonial-source">
+                      <span class="source-badge">{{ testimonial.source }}</span>
+                      <span v-if="testimonial.verified" class="verified-badge">✓ Verificada</span>
+                      <span v-if="testimonial.recent" class="recent-badge">🆕 Reciente</span>
+                    </div>
                   </div>
                   <p class="testimonial-text">{{ testimonial.text }}</p>
                   <div class="testimonial-author">
                     <div class="author-name">{{ testimonial.name }}</div>
                     <div class="author-role">{{ testimonial.role }}</div>
+                    <div class="testimonial-date">{{ formatDate(testimonial.date) }}</div>
                   </div>
                 </div>
               </div>
               
+              <!-- Slider elegante para mobile -->
+              <NCarousel 
+                :current-slide="currentTestimonialSlide"
+                @update:current-slide="currentTestimonialSlide = $event"
+                :show-dots="true"
+                :dot-type="'dot'"
+                :dot-placement="'bottom'"
+                :autoplay="true"
+                :autoplay-speed="2500"
+                :slides-per-view="1"
+                :space-between="0"
+                :centered-slides="false"
+                :loop="true"
+                :effect="'slide'"
+                :speed="500"
+                class="testimonials-carousel"
+              >
+                <NCard v-for="testimonial in displayedReviews" :key="testimonial.id" class="testimonial-carousel-card">
+                  <div class="testimonial-header">
+                    <div class="testimonial-rating">
+                      <span v-for="i in testimonial.stars" :key="i" class="star">★</span>
+                    </div>
+                    <div class="testimonial-source">
+                      <span class="source-badge">{{ testimonial.source }}</span>
+                      <span v-if="testimonial.verified" class="verified-badge">✓ Verificada</span>
+                      <span v-if="testimonial.recent" class="recent-badge">🆕 Reciente</span>
+                    </div>
+                  </div>
+                  <p class="testimonial-text">{{ testimonial.text }}</p>
+                  <div class="testimonial-author">
+                    <div class="author-name">{{ testimonial.name }}</div>
+                    <div class="author-role">{{ testimonial.role }}</div>
+                    <div class="testimonial-date">{{ formatDate(testimonial.date) }}</div>
+                  </div>
+                </NCard>
+              </NCarousel>
+              
               <div class="text-center mt-8">
-                <a href="https://www.google.com/search?q=Taller+M%C3%B3vil+Service+Rosario+rese%C3%B1as" target="_blank" class="btn btn-secondary">
-                  Ver más testimonios en Google
+                <a :href="googleMyBusinessUrl" target="_blank" class="btn btn-secondary">
+                  Ver todas las opiniones en Google
                 </a>
               </div>
             </div>
           </section>
 
-          <!-- Promotions Section -->
-          <section class="section-sm" style="background: var(--color-primary); color: white;">
-            <div class="container text-center">
-              <div class="animate-on-scroll">
-                <h2 class="text-heading-2 mb-4">¡Jueves de Promociones!</h2>
-                <p class="text-body-lg mb-6 opacity-90">
-                  Consulta nuestras ofertas especiales para los distintos medios de pago
-                </p>
-                <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero consultar sobre las promociones de los jueves.')" class="btn btn-lg" style="background: white; color: var(--color-primary);">
-                  Consultar Promociones
-                </button>
+          <!-- Promotions Section (elaborada con imagen de fondo) -->
+          <section class="promotions-section-elaborate">
+            <div class="promotions-bg-image">
+              <img :src="cortinaRoller3Url" alt="Promociones especiales" />
+            </div>
+            <div class="promotions-overlay"></div>
+            <div class="container">
+              <div class="promotions-content animate-on-scroll">
+                <div class="promotions-badge">
+                  <span class="badge-icon">🎯</span>
+                  <span>Oferta Especial</span>
+                </div>
+                <h2 class="text-heading-1 mb-4 text-white">Jueves de Promociones</h2>
+                <p class="text-body-lg mb-6 text-white opacity-90">Beneficios exclusivos por tiempo limitado. Soluciones profesionales con descuentos especiales.</p>
+                <div class="promotions-cta">
+                  <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero consultar las promociones de los jueves.')" class="btn btn-primary btn-xl">
+                    <NIcon><LogoWhatsapp /></NIcon>
+                    Consultar Promociones
+                  </button>
+                </div>
+                
+                <!-- Info adicional con diseño elegante -->
+                <div class="promotions-info-grid">
+                  <!-- Fila única: Medios de pago, Horarios, Ubicación -->
+                  <div class="info-cards-row-three">
+                    <div class="info-card info-card-equal-height info-card-payment">
+                      <div class="info-card-icon">💳</div>
+                      <div class="info-card-content">
+                        <h4>Medios de Pago</h4>
+                        <div class="payment-methods">
+                          <div class="payment-item">
+                            <span class="payment-icon">💵</span>
+                            <span class="payment-text">Efectivo</span>
+                          </div>
+                          <div class="payment-item">
+                            <span class="payment-icon">💳</span>
+                            <span class="payment-text">Tarjetas</span>
+                          </div>
+                          <div class="payment-item">
+                            <span class="payment-icon">📱</span>
+                            <span class="payment-text">Transferencia</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="info-card info-card-equal-height info-card-schedule-middle">
+                      <div class="info-card-icon">🕒</div>
+                      <div class="info-card-content">
+                        <h4>Horarios de Atención</h4>
+                        <div class="schedule-vertical">
+                          <div class="schedule-item-vertical">
+                            <span class="schedule-label">Administrativo:</span>
+                            <span class="schedule-time">09:00 - 17:00</span>
+                          </div>
+                          <div class="schedule-item-vertical">
+                            <span class="schedule-label">Operativo:</span>
+                            <span class="schedule-time">09:00 - 19:00</span>
+                          </div>
+                          <div class="schedule-item-vertical">
+                            <span class="schedule-label">Sábados:</span>
+                            <span class="schedule-time">09:00 - 13:00</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="info-card info-card-equal-height info-card-location">
+                      <div class="info-card-icon">📍</div>
+                      <div class="info-card-content">
+                        <h4>Ubicación</h4>
+                        <div class="location-details">
+                          <div class="location-item">
+                            <span class="location-icon">🏢</span>
+                            <div class="location-text">
+                              <div class="location-address">Pasco 504 5to B</div>
+                              <div class="location-city">Rosario, Santa Fe</div>
+                            </div>
+                          </div>
+                          <div class="location-item">
+                            <span class="location-icon">🚗</span>
+                            <span class="location-text">Servicio a domicilio</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
 
-          <!-- Contact Section -->
-          <section id="contacto" class="section" style="background: var(--bg-secondary);">
-            <div class="container-wide">
-              <div class="text-center mb-8 animate-on-scroll">
-                <h2 class="text-heading-1 mb-4">Estamos en Rosario</h2>
-                <p class="text-body-lg text-secondary">
-                  Contactanos para recibir atención personalizada y presupuesto sin compromiso
-                </p>
+
+          <!-- Location and Contact Section -->
+          <section id="contacto" class="section map-contact-split">
+            <div class="container-full">
+              <div class="split-header text-center animate-on-scroll">
+                <h2 class="split-heading">Visítanos o <span class="split-highlight">escribinos</span></h2>
+                <p class="split-lead">Atención inmediata, soluciones reales y soporte experto.</p>
+                <p class="split-description">Estamos en Rosario y respondemos rápido por WhatsApp. Elegí el canal que prefieras y te ayudamos al instante.</p>
               </div>
-              
-              <div class="contact-grid-elaborate">
-                <div class="contact-info-elaborate animate-on-scroll">
-                  <div class="contact-header">
-                    <h3 class="text-heading-2 mb-4">Información de Contacto</h3>
-                    <p class="text-body text-secondary mb-6">
-                      Múltiples formas de contactarnos para brindarte la mejor atención
-                    </p>
-                  </div>
-                  
-                  <div class="contact-cards">
-                    <div class="contact-card-primary">
-                      <div class="contact-card-header">
-                        <div class="contact-icon-large">
-                          <NIcon><LogoWhatsapp /></NIcon>
-                        </div>
-                        <div class="contact-card-title">
-                          <h4>WhatsApp Principal</h4>
-                          <p>Consulta general y servicios</p>
-                        </div>
-                      </div>
-                      <a :href="'https://wa.me/' + whatsappMain" target="_blank" class="contact-card-link">
-                        <strong>+{{ whatsappMain }}</strong>
-                        <span class="contact-card-arrow">→</span>
-                      </a>
-                    </div>
-                    
-                    <div class="contact-card-secondary">
-                      <div class="contact-card-header">
-                        <div class="contact-icon-large">
-                          <NIcon><CallOutline /></NIcon>
-                        </div>
-                        <div class="contact-card-title">
-                          <h4>WhatsApp Porteros</h4>
-                          <p>Especializado en porteros eléctricos</p>
-                        </div>
-                      </div>
-                      <a :href="'https://wa.me/' + whatsappPorteros" target="_blank" class="contact-card-link">
-                        <strong>+{{ whatsappPorteros }}</strong>
-                        <span class="contact-card-arrow">→</span>
-                      </a>
-                    </div>
-                    
-                    <div class="contact-card-tertiary">
-                      <div class="contact-card-header">
-                        <div class="contact-icon-large">
-                          <NIcon><MailOutline /></NIcon>
-                        </div>
-                        <div class="contact-card-title">
-                          <h4>Email</h4>
-                          <p>Consultas detalladas y presupuestos</p>
-                        </div>
-                      </div>
-                      <a href="mailto:consultas@tallermovilservice.com" class="contact-card-link">
-                        <strong>consultas@tallermovilservice.com</strong>
-                        <span class="contact-card-arrow">→</span>
-                      </a>
-                    </div>
-                  </div>
-                  
-                  <div class="contact-details-grid">
-                    <div class="detail-item">
-                      <div class="detail-icon">
-                        <NIcon><TimeOutline /></NIcon>
-                      </div>
-                      <div class="detail-content">
-                        <h5>Horarios de Atención</h5>
-                        <p>Lun-Vie: 09:00-17:00 hs<br>Sáb: 09:00-13:00 hs<br><small>(Feriados cerrado)</small></p>
-                      </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                      <div class="detail-icon">
-                        <NIcon><CardOutline /></NIcon>
-                      </div>
-                      <div class="detail-content">
-                        <h5>Medios de Pago</h5>
-                        <p>Efectivo y tarjetas</p>
-                      </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                      <div class="detail-icon">
-                        <NIcon><LocationOutline /></NIcon>
-                      </div>
-                      <div class="detail-content">
-                        <h5>Ubicación</h5>
-                        <p><strong>Pasco 504 5to B - Rosario</strong><br><small>(CP 2000) Santa Fe</small></p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="contact-form-elaborate animate-on-scroll">
-                  <div class="form-header">
-                    <h3 class="text-heading-2 mb-4">Envíanos tu consulta</h3>
-                    <p class="text-body text-secondary mb-6">
-                      Completa el formulario y te contactaremos por WhatsApp en menos de 2 horas
-                    </p>
-                  </div>
-                  
-                  <form @submit.prevent="openWhatsApp(whatsappMain, `Hola, soy ${name}. ${message}`)" class="elaborate-form">
-                    <div class="form-group-elaborate">
-                      <label class="form-label-elaborate">Nombre completo</label>
-                      <NInput v-model:value="name" placeholder="Tu nombre completo" size="large" required />
-                    </div>
-                    
-                    <div class="form-group-elaborate">
-                      <label class="form-label-elaborate">Mensaje</label>
-                      <textarea 
-                        v-model="message" 
-                        placeholder="Contanos tu necesidad específica..." 
-                        rows="5" 
-                        required
-                        class="form-textarea-elaborate"
-                      ></textarea>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-xl w-full">
-                      <NIcon><LogoWhatsapp /></NIcon>
-                      Enviar consulta por WhatsApp
-                    </button>
-                    
-                    <div class="form-footer">
-                      <div class="form-guarantee">
-                        <span class="guarantee-icon">⚡</span>
-                        <span>Respuesta garantizada en menos de 2 horas</span>
-                      </div>
-                      <div class="form-alternative">
-                        <span>¿Prefieres llamar?</span>
-                        <a :href="'https://wa.me/' + whatsappMain" target="_blank" class="alternative-link">
-                          <strong>+{{ whatsappMain }}</strong>
-                        </a>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-              </div>
-              
-              <!-- Interactive Map Section -->
-              <div class="map-section animate-on-scroll">
-                <div class="container-wide">
-                  <div class="text-center mb-8">
-                    <h3 class="text-heading-2 mb-4">Nuestra Ubicación</h3>
-                    <p class="text-body-lg text-secondary">
-                      Encontranos en el corazón de Rosario, fácil acceso y estacionamiento disponible
-                    </p>
-                  </div>
-                  
-                  <div class="map-container">
+              <div class="split-grid animate-on-scroll">
+                <!-- Lado izquierdo: mapa inmersivo -->
+                <div class="split-map">
+                  <div class="split-encapsulate split-map-frame">
                     <iframe 
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3348.1234567890!2d-60.6396!3d-32.9442!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95b7ab1234567890%3A0x1234567890abcdef!2sPasco%20504%2C%20Rosario%2C%20Santa%20Fe!5e0!3m2!1ses!2sar!4v1234567890123!5m2!1ses!2sar"
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3348.1234567890!2d-60.6336425!3d-32.960875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x65793edc3d0062bc!2sTaller%20Movil%20-%20Service!5e0!3m2!1ses!2sar!4v1234567890123!5m2!1ses!2sar"
                       width="100%" 
-                      height="400" 
-                      style="border:0; border-radius: var(--radius-xl);" 
+                      height="100%" 
+                      style="border:0;" 
                       allowfullscreen="true" 
                       loading="lazy" 
                       referrerpolicy="no-referrer-when-downgrade">
                     </iframe>
                   </div>
-                  
-                  <div class="map-info">
-                    <div class="map-details">
-                      <h4 class="text-heading-3 mb-4">Información de Acceso</h4>
-                      <div class="access-info">
-                        <div class="access-item">
-                          <span class="access-icon">🚗</span>
-                          <div>
-                            <strong>Estacionamiento</strong>
-                            <p>Disponible en la zona</p>
-                          </div>
-                        </div>
-                        <div class="access-item">
-                          <span class="access-icon">🚌</span>
-                          <div>
-                            <strong>Transporte Público</strong>
-                            <p>Múltiples líneas de colectivo</p>
-                          </div>
-                        </div>
-                        <div class="access-item">
-                          <span class="access-icon">🚶</span>
-                          <div>
-                            <strong>Caminando</strong>
-                            <p>Acceso peatonal desde el centro</p>
-                          </div>
-                        </div>
+                </div>
+
+                <!-- Lado derecho: panel de contacto con imagen -->
+                <div class="split-panel split-encapsulate">
+                  <div class="split-panel-bg">
+                    <img :src="cortinasRoller1Url" alt="Contacto Taller Móvil Service" />
+                  </div>
+                  <div class="split-panel-overlay"></div>
+                  <div class="split-panel-content">
+                    <h2 class="split-title">Contactanos</h2>
+                    <p class="split-subtitle">Atención inmediata y profesional en Rosario.</p>
+                    <div class="split-badges">
+                      <span class="split-badge">Respuesta en minutos</span>
+                      <span class="split-badge">Atención 24/7</span>
+                      <span class="split-badge">Garantía de servicio</span>
+                    </div>
+                    <div class="split-actions">
+                      <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero hacer una consulta general.')" class="btn btn-primary btn-large">
+                        <NIcon><LogoWhatsapp /></NIcon>
+                        <span>WhatsApp General</span>
+                      </button>
+                      <button @click="openWhatsApp(whatsappPorteros, 'Hola! Necesito servicio de porteros eléctricos.')" class="btn btn-primary btn-outline btn-large">
+                        <NIcon><LogoWhatsapp /></NIcon>
+                        <span>Porteros Eléctricos</span>
+                      </button>
+                      <button @click="openWhatsApp(whatsappMain, 'Hola! Quiero enviar un email con detalles de mi consulta.')" class="btn btn-secondary btn-large split-action-wide">
+                        <NIcon><MailOutline /></NIcon>
+                        <span>Enviar Email</span>
+                      </button>
+                    </div>
+                    <div class="split-meta">
+                      <div class="meta-item">
+                        <NIcon><LocationOutline /></NIcon>
+                        <span>Pasco 504, 5to B • Rosario</span>
                       </div>
                     </div>
                   </div>
@@ -591,6 +1234,100 @@ onMounted(() => {
             </div>
           </section>
         </main>
+
+        <!-- Footer Profesional Elaborado -->
+        <footer class="footer-professional-elaborate">
+          <div class="container-wide">
+            <div class="footer-content">
+              <div class="footer-brand">
+                <div class="footer-logo">
+                  <img :src="logoUrl" alt="Taller Móvil Service" />
+                </div>
+                <h3>Taller Móvil Service</h3>
+                <p>Especialistas en reparación y motorización de persianas y cortinas roller en Rosario. Más de 20 años brindando soluciones confiables y profesionales.</p>
+                <div class="footer-social">
+                  <a :href="'https://wa.me/' + whatsappMain" target="_blank" class="social-link" title="WhatsApp">
+                    <NIcon><LogoWhatsapp /></NIcon>
+                  </a>
+                  <a href="https://www.instagram.com/tallermovilservice/" target="_blank" class="social-link" title="Instagram">
+                    <NIcon><LogoInstagram /></NIcon>
+                  </a>
+                  <a href="https://www.facebook.com/TallerMovilService/" target="_blank" class="social-link" title="Facebook">
+                    <NIcon><LogoFacebook /></NIcon>
+                  </a>
+                  <a href="mailto:consultas@tallermovilservice.com" class="social-link" title="Email">
+                    <NIcon><MailOutline /></NIcon>
+                  </a>
+                </div>
+              </div>
+              
+              <div class="footer-links">
+                <div class="footer-column">
+                  <h4>Servicios</h4>
+                  <ul>
+                    <li><a href="#servicios">Reparación de Persianas</a></li>
+                    <li><a href="#servicios">Cortinas Roller</a></li>
+                    <li><a href="#servicios">Persianas de Madera</a></li>
+                    <li><a href="#servicios">Motorización</a></li>
+                    <li><a href="#servicios">Mantenimiento</a></li>
+                  </ul>
+                </div>
+                
+                <div class="footer-column">
+                  <h4>Empresa</h4>
+                  <ul>
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#testimonios">Testimonios</a></li>
+                    <li><a href="#contacto">Contacto</a></li>
+                    <li><a href="#contacto">Ubicación</a></li>
+                    <li><a href="#servicios">Nuestros Servicios</a></li>
+                  </ul>
+                </div>
+                
+                <div class="footer-column">
+                  <h4>Contacto</h4>
+                  <div class="contact-info">
+                    <div class="contact-item">
+                      <NIcon><LogoWhatsapp /></NIcon>
+                      <span>+{{ whatsappMain }}</span>
+                    </div>
+                    <div class="contact-item">
+                      <NIcon><MailOutline /></NIcon>
+                      <span>consultas@tallermovilservice.com</span>
+                    </div>
+                    <div class="contact-item">
+                      <NIcon><LocationOutline /></NIcon>
+                      <a href="https://www.google.com/maps/place/Taller+Movil+-+Service/@-32.960875,-60.6336425,15z/data=!4m2!3m1!1s0x0:0x65793edc3d0062bc?sa=X&ved=1t:2428&hl=es&ictx=111" target="_blank" class="location-link">
+                        Pasco 504 5to B, Rosario
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="footer-bottom">
+              <div class="footer-copyright">
+                <p>&copy; 2025 Taller Móvil Service. Todos los derechos reservados.</p>
+              </div>
+              <div class="footer-legal">
+                <a href="#">Política de Privacidad</a>
+                <a href="#">Términos y Condiciones</a>
+              </div>
+            </div>
+            
+            <!-- Crédito de desarrollo -->
+            <div class="footer-development">
+              <div class="development-credit">
+                <p>Web desarrollada por</p>
+                <a href="https://seiminteractive.io" target="_blank" class="development-link">
+                  <img :src="logoSeimUrl" alt="Seim Interactive" class="development-logo" />
+                  <span>Seim Interactive</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </footer>
 
         <!-- Floating WhatsApp Button -->
         <div class="float-whatsapp">
@@ -610,16 +1347,17 @@ onMounted(() => {
 <style scoped>
 /* Navigation */
 .nav {
-  position: sticky;
+  position: fixed;
+  left: 0;
+  right: 0;
   top: 0;
-  z-index: 50;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border-light);
+  z-index: 100;
+  background: transparent;
+  border-bottom: 1px solid transparent;
 }
 
 .dark .nav {
-  background: rgba(15, 23, 42, 0.95);
+  background: transparent;
 }
 
 .nav-content {
@@ -709,7 +1447,7 @@ onMounted(() => {
 }
 
 .hero-actions {
-  display: flex;
+  display: block;
   gap: 1rem;
   margin-bottom: 3rem;
 }
