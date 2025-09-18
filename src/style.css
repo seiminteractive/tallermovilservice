@@ -161,6 +161,9 @@
   --radius-2xl: 24px;
 }
 
+html, body { background: #0F172A; }
+body { color: #FFFFFF; }
+
 html { 
   scroll-behavior: smooth; 
   font-size: 16px;

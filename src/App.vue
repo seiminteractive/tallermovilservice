@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { NConfigProvider, NMessageProvider, NDialogProvider, darkTheme, type GlobalThemeOverrides, NIcon, NBackTop, NCarousel, NCard } from 'naive-ui'
-import { useDark } from '@vueuse/core'
 import { LogoWhatsapp, MailOutline, LocationOutline, LogoInstagram, LogoFacebook } from '@vicons/ionicons5'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
@@ -17,8 +16,7 @@ import logoSeimUrl from './assets/logo-seim-interactive.png'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const isDark = useDark({ selector: 'html', attribute: 'class', valueDark: 'dark', valueLight: '' })
-// const toggleDark = useToggle(isDark)
+// Modo de color fijo (no depender del sistema)
 
 const isScrolled = ref(false)
 const activeSection = ref('inicio')
@@ -334,7 +332,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <NConfigProvider :theme="isDark ? darkTheme : null" :theme-overrides="themeOverrides">
+  <NConfigProvider :theme="null" :theme-overrides="themeOverrides">
     <NDialogProvider>
       <NMessageProvider>
         <!-- Navigation -->
