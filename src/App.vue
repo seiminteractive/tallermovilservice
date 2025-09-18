@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { NConfigProvider, NMessageProvider, NDialogProvider, darkTheme, type GlobalThemeOverrides, NIcon, NBackTop, NCarousel, NCard, NGrid, NGridItem } from 'naive-ui'
+import { NConfigProvider, NMessageProvider, NDialogProvider, darkTheme, type GlobalThemeOverrides, NIcon, NBackTop, NCarousel, NCard } from 'naive-ui'
 import { useDark } from '@vueuse/core'
 import { LogoWhatsapp, MailOutline, LocationOutline, LogoInstagram, LogoFacebook } from '@vicons/ionicons5'
 import gsap from 'gsap'
@@ -60,8 +60,20 @@ const whatsappMain = '5493416405980'
 const whatsappPorteros = '5493416298496'
 
 // Opiniones dinámicas cargadas desde archivo JSON
-const googleReviews = ref([])
-const reviewsData = ref({
+type Review = {
+  id: number
+  name: string
+  role: string
+  stars: number
+  text: string
+  date: string
+  verified: boolean
+  source: string
+  recent: boolean
+}
+
+const googleReviews = ref<Review[]>([])
+const reviewsData = ref<{ lastUpdated: string; totalReviews: number; averageRating: number }>({
   lastUpdated: '',
   totalReviews: 0,
   averageRating: 0
@@ -72,7 +84,8 @@ const currentServiceSlide = ref(0)
 const currentTestimonialSlide = ref(0)
 
 // Variables para animaciones de números
-const animatedNumbers = ref({
+type StatsKeys = 'inmobiliarias' | 'confianza' | 'disponibilidad' | 'reviews' | 'rating' | 'años'
+const animatedNumbers = ref<Record<StatsKeys, number>>({
   inmobiliarias: 0,
   confianza: 0,
   disponibilidad: 0,
@@ -84,62 +97,37 @@ const animatedNumbers = ref({
 // Variables para menú hamburguesa
 const isMobileMenuOpen = ref(false)
 
-// Función para animar números
-const animateNumber = (target, duration = 2000, start = 0) => {
-  const startTime = performance.now()
-  
-  const animate = (currentTime) => {
-    const elapsed = currentTime - startTime
-    const progress = Math.min(elapsed / duration, 1)
-    
-    // Easing function (ease-out)
-    const easeOut = 1 - Math.pow(1 - progress, 3)
-    
-    const current = start + (target - start) * easeOut
-    
-    if (typeof target === 'number') {
-      return Math.floor(current)
-    } else {
-      return current.toFixed(1)
-    }
-  }
-  
-  return animate
-}
-
 // Función para animar múltiples números
-const animateNumbers = (targets) => {
-  Object.keys(targets).forEach(key => {
-    const target = targets[key]
+const animateNumbers = (targets: Partial<Record<StatsKeys, number>>): void => {
+  for (const key in targets) {
+    const k = key as StatsKeys
+    const target = (targets[k] ?? 0) as number
     const duration = 2000
     const startTime = performance.now()
-    
-    const animate = (currentTime) => {
+
+    const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime
       const progress = Math.min(elapsed / duration, 1)
-      
-      // Easing function (ease-out)
       const easeOut = 1 - Math.pow(1 - progress, 3)
-      
       const current = target * easeOut
-      
-      if (key === 'rating') {
-        animatedNumbers.value[key] = current.toFixed(1)
+
+      if (k === 'rating') {
+        animatedNumbers.value[k] = Number(current.toFixed(1))
       } else {
-        animatedNumbers.value[key] = Math.floor(current)
+        animatedNumbers.value[k] = Math.floor(current)
       }
-      
+
       if (progress < 1) {
         requestAnimationFrame(animate)
       }
     }
-    
+
     requestAnimationFrame(animate)
-  })
+  }
 }
 
 // Opiniones de fallback (por si falla la carga)
-const fallbackReviews = [
+const fallbackReviews: Review[] = [
   {
     id: 1,
     name: 'María González',
@@ -238,54 +226,15 @@ async function loadReviews() {
   }
 }
 
-// Función para formatear la fecha de última actualización
-function formatLastUpdated(dateString: string) {
-  if (!dateString) return 'Hoy'
-  
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-  
-  if (diffHours < 24) {
-    return 'Hoy'
-  } else if (diffHours < 48) {
-    return 'Ayer'
-  } else {
-    return date.toLocaleDateString('es-AR', {
-      day: 'numeric',
-      month: 'short'
-    })
-  }
-}
+// (formatLastUpdated) removido por no utilizarse
 
 // Computed para las opiniones a mostrar (ya vienen filtradas del backend)
-const displayedReviews = computed(() => {
+const displayedReviews = computed<Review[]>(() => {
   // Las opiniones ya vienen filtradas por 4+ estrellas y limitadas a 3 desde el script
   return googleReviews.value.slice(0, 3)
 })
 
-// Función para simular la obtención de opiniones reales de Google
-// En producción, esto se reemplazaría por una llamada a la API de Google Places
-async function fetchRealGoogleReviews() {
-  // Simular delay de API
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // En producción, aquí harías la llamada real a:
-  // https://maps.googleapis.com/maps/api/place/details/json?place_id=PLACE_ID&fields=name,rating,reviews&key=TU_API_KEY
-  
-  console.log('🔄 Obteniendo opiniones reales de Google My Business...')
-  
-  // Retornar las opiniones actuales (en producción vendrían de la API)
-  return displayedReviews.value
-}
-
-// Función para actualizar opiniones (se puede llamar periódicamente)
-function updateReviews() {
-  console.log('📊 Actualizando opiniones de Google...')
-  fetchRealGoogleReviews().then(reviews => {
-    console.log('✅ Opiniones actualizadas:', reviews.length)
-  })
-}
+// (fetchRealGoogleReviews / updateReviews) removidos por no utilizarse
 
 const years = ref(0)
 
